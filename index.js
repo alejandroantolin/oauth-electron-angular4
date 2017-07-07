@@ -1,9 +1,15 @@
 const {app, BrowserWindow, Notification,ipcMain, ipcRenderer} = require('electron')
+const log = require('electron-log');
+const {autoUpdater} = require("electron-updater");
 
 const path = require('path')
 const url = require('url')
 const AuthWindow = require('./auth');
-const Client = require('ssh2').Client;
+
+//Logging
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+log.info('App starting...');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -12,6 +18,8 @@ let win
 function createWindow () {
   // Create the browser window.
   win =  new BrowserWindow({width: 1120, height: 700, frame: false, minHeight: 610, minWidth: 850});
+
+  win.webContents.openDevTools()
 
   // and load the index.html of the app.
   win.loadURL(url.format({
@@ -26,12 +34,38 @@ function createWindow () {
   })
 }
 
+function sendStatusToWindow(text) {
+  log.info(text);
+  win.webContents.send('message', text);
+}
+
 global.openLoginServer = function(server_name, callback){
   AuthWindow.startRequest(win, function(access_token, err) {
     callback(err, access_token);
   });
 }
 
+autoUpdater.on('checking-for-update', () => {
+  sendStatusToWindow('Buscando actualizaciones...');
+})
+autoUpdater.on('update-available', (info) => {
+  sendStatusToWindow('Actualización disponible');
+})
+autoUpdater.on('update-not-available', (info) => {
+  sendStatusToWindow('Ya tienes la última versión.');
+})
+autoUpdater.on('error', (err) => {
+  sendStatusToWindow('Error al actualizar.');
+})
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = "Download speed: " + progressObj.bytesPerSecond;
+  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  sendStatusToWindow(log_message);
+})
+autoUpdater.on('update-downloaded', (info) => {
+  sendStatusToWindow('Actualización descargada, se instalará en 5 segundos.');
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -55,6 +89,15 @@ app.on('activate', () => {
   }
 })
 
+autoUpdater.on('update-downloaded', (info) => {
+  // Wait 5 seconds, then quit and install
+  // In your application, you don't need to wait 5 seconds.
+  // You could call autoUpdater.quitAndInstall(); immediately
+  setTimeout(function() {
+    autoUpdater.quitAndInstall();  
+  }, 5000)
+})
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+app.on('ready', function()  {
+  autoUpdater.checkForUpdates();
+});

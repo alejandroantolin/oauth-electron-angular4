@@ -3,3 +3,4 @@ build/
 typings/
 debug.log
 config.json
+publish.sh
