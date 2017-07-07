@@ -19,7 +19,7 @@ function createWindow () {
   // Create the browser window.
   win =  new BrowserWindow({width: 1120, height: 700, frame: false, minHeight: 610, minWidth: 850});
 
-  win.webContents.openDevTools()
+  //win.webContents.openDevTools()
 
   // and load the index.html of the app.
   win.loadURL(url.format({
@@ -58,9 +58,14 @@ autoUpdater.on('error', (err) => {
   sendStatusToWindow('Error al actualizar.');
 })
 autoUpdater.on('download-progress', (progressObj) => {
-  let log_message = "Download speed: " + progressObj.bytesPerSecond;
-  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  let speed = ((progressObj.bytesPerSecond / 1000) / 1000).toFixed(1);
+  let transferred = ((progressObj.transferred / 1000) / 1000).toFixed(1);
+  let total = ((progressObj.total / 1000) / 1000).toFixed(1);
+  let percent = progressObj.percent.toFixed(1);
+
+  let log_message = "Download speed: " + speed + " Mb/s";
+  log_message = log_message + ' - Downloaded: ' + percent + '%';
+  log_message = log_message + ' (' + transferred + "/" + total + ')';
   sendStatusToWindow(log_message);
 })
 autoUpdater.on('update-downloaded', (info) => {
@@ -95,7 +100,7 @@ autoUpdater.on('update-downloaded', (info) => {
   // You could call autoUpdater.quitAndInstall(); immediately
   setTimeout(function() {
     autoUpdater.quitAndInstall();  
-  }, 5000)
+  },5000)
 })
 
 app.on('ready', function()  {
