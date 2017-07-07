@@ -32,7 +32,7 @@
       "publish": [{
           "provider": "github",
           "owner": "alejandroantolin",
-          "repo": "oauth-electron-angular"
+          "repo": "oauth-electron-angular4"
       }]
   }
 }
